@@ -1,124 +1,80 @@
+// src/components/Navbar.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const { user, logout } = useAuth(); // Get logged-in user details
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
-    <nav className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 shadow-md">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo */}
-        <h1 className="text-2xl font-bold text-white">
-          Student Complaint System
-        </h1>
+    <nav className="bg-blue-600 text-white px-6 py-4 shadow-md">
+      <div className="flex justify-between items-center">
+        {/* Logo and Home link */}
+        <Link to="/" className="text-xl font-bold flex items-center gap-2">
+          <span role="img" aria-label="school">
+            🏫
+          </span>
+          Complaint System
+        </Link>
 
-        {/* Navigation Links */}
-        <ul className="flex space-x-8 text-white font-medium">
-          <li>
+        <div className="flex gap-4 items-center">
+          {/* Login option for users who are not logged in */}
+          {!user ? (
             <Link
-              to="/"
-              className="hover:text-indigo-300 transition duration-200"
+              to="/login"
+              className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100 font-medium"
             >
-              Home
+              Login
             </Link>
-          </li>
-
-          {user && (
+          ) : (
             <>
-              <li>
-                <Link
-                  to="/dashboard"
-                  className="hover:text-indigo-300 transition duration-200"
-                >
-                  Dashboard
-                </Link>
-              </li>
-
-              {/* Student-specific links */}
-              {user.role === "student" && (
+              {/* Links for logged-in students */}
+              {user?.role === "student" && (
                 <>
-                  <li>
-                    <Link
-                      to="/submit-complaint"
-                      className="hover:text-indigo-300 transition duration-200"
-                    >
-                      Submit Complaint
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/track-complaints"
-                      className="hover:text-indigo-300 transition duration-200"
-                    >
-                      Track Complaints
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/messages"
-                      className="hover:text-indigo-300 transition duration-200"
-                    >
-                      Messages
-                    </Link>
-                  </li>
+                  <Link to="/student/dashboard" className="hover:underline">
+                    Dashboard
+                  </Link>
+                  <Link to="/student/submit-complaint" className="hover:underline">
+                    Submit Complaint
+                  </Link>
+                  <Link to="/student/track-complaints" className="hover:underline">
+                    Track Complaints
+                  </Link>
+                  <Link to="/student/messages" className="hover:underline">
+                    Messages
+                  </Link>
                 </>
               )}
 
-              {/* Admin (HOD) specific links */}
-              {user.role === "admin" && (
+              {/* Links for logged-in admins */}
+              {user?.role === "admin" && (
                 <>
-                  <li>
-                    <Link
-                      to="/manage-complaints"
-                      className="hover:text-indigo-300 transition duration-200"
-                    >
-                      Manage Complaints
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin-dashboard"
-                      className="hover:text-indigo-300 transition duration-200"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  </li>
+                  <Link to="/admin/dashboard" className="hover:underline">
+                    Dashboard
+                  </Link>
+                  <Link to="/admin/manage-complaints" className="hover:underline">
+                    Manage Complaints
+                  </Link>
+                  <Link to="/admin/messages" className="hover:underline">
+                    Messages
+                  </Link>
                 </>
               )}
 
-              {/* Common to both roles */}
-              <li>
-                <Link
-                  to="/profile"
-                  className="hover:text-indigo-300 transition duration-200"
-                >
-                  Profile
-                </Link>
-              </li>
-            </>
-          )}
-        </ul>
-
-        {/* Profile & Logout */}
-        <div className="flex items-center space-x-4">
-          {user ? (
-            <>
-              <span className="text-white font-medium">Hi, {user.name}!</span>
+              {/* Logout button */}
               <button
-                onClick={logout}
-                className="text-sm text-white bg-red-600 px-4 py-2 rounded-lg shadow hover:bg-red-700 transition"
+                onClick={handleLogout}
+                className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-gray-100 font-medium"
               >
                 Logout
               </button>
             </>
-          ) : (
-            <Link
-              to="/login"
-              className="text-sm text-white bg-indigo-600 px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition"
-            >
-              Login
-            </Link>
           )}
         </div>
       </div>

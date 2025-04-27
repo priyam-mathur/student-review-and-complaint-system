@@ -1,41 +1,43 @@
+// src/pages/Home.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaClipboardList, FaChartLine, FaHandsHelping } from "react-icons/fa";
-import axios from "axios"; // Import axios for API calls
+import axios from "axios";
+import Navbar from "../components/Navbar"; // Import Navbar
 
 const Home = () => {
-  const [stats, setStats] = useState({ pending: 0, resolved: 0 }); // Stats for pending and resolved complaints
-  const [testimonials, setTestimonials] = useState([]); // Testimonials from students
-  const [loading, setLoading] = useState(true); // Loading state for async data fetch
+  const [stats, setStats] = useState({ pending: 0, resolved: 0 });
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch dynamic data from the backend
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        // Fetch the stats (pending and resolved complaints) from the backend
         const statsRes = await axios.get("http://localhost:5000/api/complaints/stats");
-        setStats(statsRes.data); // Set the fetched stats
+        setStats(statsRes.data);
 
-        // Fetch testimonials data
         const testimonialsRes = await axios.get("http://localhost:5000/api/testimonials");
-        setTestimonials(testimonialsRes.data); // Set the fetched testimonials
+        setTestimonials(testimonialsRes.data);
 
-        setLoading(false); // Set loading to false once data is fetched
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching home data", err);
-        setLoading(false); // Set loading to false in case of error
+        setLoading(false);
       }
     };
 
     fetchHomeData();
-  }, []); // Empty dependency array ensures this runs once on component mount
+  }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // Loading state
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 pt-20">
+      {/* Navbar */}
+      <Navbar /> {/* Add the Navbar component here */}
+
       {/* Hero Section */}
       <header className="relative bg-gradient-to-r from-indigo-600 to-blue-500 text-white py-24 md:py-32">
         <div className="container mx-auto text-center px-4">
@@ -92,16 +94,7 @@ const Home = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-8 px-4 md:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-700 shadow-lg p-6 rounded-lg hover:shadow-xl transition-shadow">
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Pending Complaints</h2>
-          <p className="text-4xl font-bold text-blue-500 dark:text-blue-400">{stats.pending}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-700 shadow-lg p-6 rounded-lg hover:shadow-xl transition-shadow">
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Resolved Complaints</h2>
-          <p className="text-4xl font-bold text-green-500 dark:text-green-400">{stats.resolved}</p>
-        </div>
-      </section>
+      
 
       {/* Testimonials Section */}
       <section className="py-20 bg-gray-50">

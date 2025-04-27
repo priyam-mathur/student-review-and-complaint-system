@@ -1,101 +1,110 @@
-// /backend/auth.js
+// backend/auth.js
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import User from './models/User.js';
 
-import express from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import User from "./models/User.js"; // MongoDB User model
-
+dotenv.config();
 const router = express.Router();
-const SECRET_KEY = "your_secret_key";
 
-// Register Route
-router.post("/register", async (req, res) => {
-  const { name, email, password, role } = req.body;
+// Hardcoded users for testing
+const hardcodedUsers = [
+  {
+    email: 'admin@example.com',
+    password: 'admin123', // Plain text password for testing purposes
+    role: 'admin',
+    name: 'Admin User',
+  },
+  {
+    email: 'student@example.com',
+    password: 'student123', // Plain text password for testing purposes
+    role: 'student',
+    name: 'Student User',
+  },
+];
 
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "student",
-    });
-
-    await newUser.save();
-
-    const token = jwt.sign(
-      { id: newUser._id, email: newUser.email, role: newUser.role },
-      SECRET_KEY,
-      { expiresIn: "1h" }
-    );
-
-    res.status(201).json({
-      token,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Login Route
-router.post("/login", async (req, res) => {
+// @route   POST /api/login
+// @desc    Authenticate user and get token
+// @access  Public
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // First, check for hardcoded users
+    const hardcodedUser = hardcodedUsers.find(
+      (user) => user.email === email && user.password === password
+    );
+    
+    if (hardcodedUser) {
+      // If the user is found in hardcoded users, create a token
+      const token = jwt.sign(
+        { id: hardcodedUser.email, role: hardcodedUser.role }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '1d' }
+      );
+      
+      return res.json({
+        token,
+        user: {
+          id: hardcodedUser.email,
+          email: hardcodedUser.email,
+          role: hardcodedUser.role,
+          name: hardcodedUser.name,
+        },
+      });
+    }
+
+    // Check if user exists in the database
     const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
+    // Validate password (for database user)
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
+    // Create token for database user
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      SECRET_KEY,
-      { expiresIn: "1h" }
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
     );
 
     res.json({
       token,
       user: {
         id: user._id,
-        name: user.name,
         email: user.email,
         role: user.role,
+        name: user.name,
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
-// Get User Route
-router.get("/user", (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+// Dummy middleware to extract token and user
+export const authenticateUser = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
 
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    res.json({ user: decoded });
-  } catch (error) {
-    res.status(401).json({ message: "Invalid token" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(403).json({ message: 'Invalid token' });
   }
+};
+
+// @route   GET /api/user
+// @desc    Get user data (auth required)
+// @access  Private
+router.get('/user', authenticateUser, (req, res) => {
+  // Send back user info from the token
+  res.json({ user: req.user });
 });
 
 export default router;
